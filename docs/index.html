@@ -47,9 +47,9 @@
 
                 // 开始并行请求
                 Promise.all(prArr).then(result => {
-                    result.forEach((item, index) => {
+                    result.forEach((content, index) => {
                         // json 转 csv，第一个参数为数据，第二参数为表头字段
-                        const csvData = JSONtoCSV(item, ['userId', 'id', 'title', 'body']);
+                        const csvData = JSONtoCSV(content, ['userId', 'id', 'title', 'body']);
                         // 添加 csv 文件，可定义文件名
                         zip.file(`fileName${index + 1}.csv`, csvData);
                     });
