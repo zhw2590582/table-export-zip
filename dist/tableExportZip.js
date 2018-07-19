@@ -44,6 +44,16 @@
 	  };
 	}();
 
+	var toConsumableArray = function (arr) {
+	  if (Array.isArray(arr)) {
+	    for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) arr2[i] = arr[i];
+
+	    return arr2;
+	  } else {
+	    return Array.from(arr);
+	  }
+	};
+
 	var jszip_min = createCommonjsModule(function (module, exports) {
 	  /*!
 	  
@@ -2559,691 +2569,58 @@
 		module.exports = saveAs;
 	});
 
-	/* jshint node:true */
+	var zip = new jszip_min();
 
-	var eol = "\n";
+	var CSVToJSON = function CSVToJSON(data) {
+		var delimiter = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : ",";
 
-	var isFunction = function isFunction(fn) {
-	    var getType = {};
-	    return fn && getType.toString.call(fn) === '[object Function]';
+		var titles = data.slice(0, data.indexOf("\n")).split(delimiter);
+		return data.slice(data.indexOf("\n") + 1).split("\n").map(function (v) {
+			var values = v.split(delimiter);
+			return titles.reduce(function (obj, title, index) {
+				return obj[title] = values[index], obj;
+			}, {});
+		});
 	};
 
-	var isArray = function isArray(arr) {
-	    return Array.isArray(arr);
+	var JSONtoCSV = function JSONtoCSV(arr, columns) {
+		var delimiter = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : ",";
+		return [columns.join(delimiter)].concat(toConsumableArray(arr.map(function (obj) {
+			return columns.reduce(function (acc, key) {
+				return "" + acc + (!acc.length ? "" : delimiter) + "\"" + (!obj[key] ? "" : obj[key]) + "\"";
+			}, "");
+		}))).join("\n");
 	};
-
-	var isObject = function isObject(obj) {
-	    return obj instanceof Object;
-	};
-
-	var isString = function isString(str) {
-	    return typeof str === 'string';
-	};
-
-	var isNumber = function isNumber(num) {
-	    return typeof num === 'number';
-	};
-
-	var isBoolean = function isBoolean(bool) {
-	    return typeof bool === 'boolean';
-	};
-
-	var isDate = function isDate(date) {
-	    return date instanceof Date;
-	};
-
-	var helper = {
-	    isFunction: isFunction,
-	    isArray: isArray,
-	    isObject: isObject,
-	    isString: isString,
-	    isNumber: isNumber,
-	    isBoolean: isBoolean,
-	    isDate: isDate
-	};
-
-	var joinRows = function joinRows(rows, join) {
-	  if (!rows || !helper.isArray(rows)) {
-	    throw new TypeError('Invalid params "rows" for joinRows.' + ' Must be an array of string.');
-	  }
-	  //Merge all rows in a single output with the correct End of Line string
-	  var r = rows.join(join || eol || '\n');
-	  return r;
-	};
-
-	var _typeof$1 = typeof Symbol === "function" && _typeof(Symbol.iterator) === "symbol" ? function (obj) {
-	  return typeof obj === 'undefined' ? 'undefined' : _typeof(obj);
-	} : function (obj) {
-	  return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj === 'undefined' ? 'undefined' : _typeof(obj);
-	};
-
-	var _createClass = function () {
-	  function defineProperties(target, props) {
-	    for (var i = 0; i < props.length; i++) {
-	      var descriptor = props[i];descriptor.enumerable = descriptor.enumerable || false;descriptor.configurable = true;if ("value" in descriptor) descriptor.writable = true;Object.defineProperty(target, descriptor.key, descriptor);
-	    }
-	  }return function (Constructor, protoProps, staticProps) {
-	    if (protoProps) defineProperties(Constructor.prototype, protoProps);if (staticProps) defineProperties(Constructor, staticProps);return Constructor;
-	  };
-	}();
-
-	function _classCallCheck(instance, Constructor) {
-	  if (!(instance instanceof Constructor)) {
-	    throw new TypeError("Cannot call a class as a function");
-	  }
-	}
-
-	var Handler = function () {
-	  function Handler(options) {
-	    _classCallCheck(this, Handler);
-
-	    this._options = options;
-
-	    //an object of {typeName:(value,index,parent)=>any}
-	    this._options.typeHandlers = this._options.typeHandlers || {};
-
-	    //deprecated options
-	    this._options.handleString = this._options.handleString ? warnDepOp('handleString', this._options.handleString) : this._handleString;
-	    this._options.handleNumber = this._options.handleNumber ? warnDepOp('handleNumber', this._options.handleNumber) : this._handleNumber;
-	    this._options.handleBoolean = this._options.handleBoolean ? warnDepOp('handleBoolean', this._options.handleBoolean) : this._handleBoolean;
-	    this._options.handleDate = this._options.handleDate ? warnDepOp('handleDate', this._options.handleDate) : this._handleDate;
-	  }
-
-	  /**
-	   * Check if results needing mapping to alternate value
-	   *
-	   * @returns [{item, value}] result
-	   */
-
-	  _createClass(Handler, [{
-	    key: '_setHeaders',
-	    value: function _setHeaders(result, item) {
-	      var self = this;
-	      if (!item) return result;
-	      return result.map(function (element) {
-	        element.item = element.item ? item + self._options.headerPathString + element.item : item;
-	        return element;
-	      });
-	    }
-	  }, {
-	    key: 'castValue',
-	    value: function castValue(element, item, index, parent) {
-	      //cast by matching constructor
-	      var types = this._options.typeHandlers;
-	      for (var type in types) {
-	        if (isInstanceOfTypeName(element, type)) {
-	          element = types[type].call(types, element, index, parent);
-	          break; //first match we move on
-	        }
-	      }
-
-	      return element;
-	    }
-	  }, {
-	    key: 'checkComplex',
-	    value: function checkComplex(element, item) {
-	      //Check if element is a Date
-	      if (helper.isDate(element)) {
-	        return [{
-	          item: item,
-	          value: this._options.handleDate(element, item)
-	        }];
-	      }
-	      //Check if element is an Array
-	      else if (helper.isArray(element)) {
-	          var resultArray = this._handleArray(element, item);
-	          return this._setHeaders(resultArray, item);
-	        }
-	        //Check if element is a Object
-	        else if (helper.isObject(element)) {
-	            var resultObject = this._handleObject(element);
-	            return this._setHeaders(resultObject, item);
-	          }
-
-	      return [{
-	        item: item,
-	        value: ''
-	      }];
-	    }
-
-	    /**
-	     * Check the element type of the element call the correct handle function
-	     *
-	     * @param element Element that will be checked
-	     * @param item Used to make the headers/path breadcrumb
-	     * @returns [{item, value}] result
-	     */
-
-	  }, {
-	    key: 'check',
-	    value: function check(element, item, index, parent) {
-	      element = this.castValue(element, item, index, parent);
-
-	      //try simple value by highier performance switch
-	      switch (typeof element === 'undefined' ? 'undefined' : _typeof$1(element)) {
-	        case 'string':
-	          return [{
-	            item: item,
-	            value: this._options.handleString(element, item)
-	          }];
-
-	        case 'number':
-	          return [{
-	            item: item,
-	            value: this._options.handleNumber(element, item)
-	          }];
-
-	        case 'boolean':
-	          return [{
-	            item: item,
-	            value: this._options.handleBoolean.bind(this)(element, item)
-	          }];
-	      }
-
-	      return this.checkComplex(element, item);
-	    }
-
-	    /**
-	     * Handle all Objects
-	     *
-	     * @param {Object} obj
-	     * @returns [{item, value}] result
-	     */
-
-	  }, {
-	    key: '_handleObject',
-	    value: function _handleObject(obj) {
-	      var result = [];
-	      //Look every object props
-	      for (var prop in obj) {
-	        var propData = obj[prop];
-	        //Check the propData type
-	        var resultCheckType = this.check(propData, prop, prop, obj);
-	        //Append to results aka merge results aka array-append-array
-	        result = result.concat(resultCheckType);
-	      }
-	      return result;
-	    }
-
-	    /**
-	     * Handle all Arrays, merges arrays with primitive types in a single value
-	     *
-	     * @param {Array} array
-	     * @returns [{item, value}] result
-	     */
-
-	  }, {
-	    key: '_handleArray',
-	    value: function _handleArray(array) {
-	      var self = this;
-	      var result = [];
-	      var firstElementWithoutItem;
-	      for (var aIndex = 0; aIndex < array.length; ++aIndex) {
-	        var element = array[aIndex];
-	        //Check the propData type
-	        var resultCheckType = self.check(element, null, aIndex, array);
-	        //Check for results without itens, merge all itens with the first occurrence
-	        if (resultCheckType.length === 0) continue;
-	        var firstResult = resultCheckType[0];
-	        if (!firstResult.item && firstElementWithoutItem !== undefined) {
-	          firstElementWithoutItem.value += self._options.arrayPathString + firstResult.value;
-	          continue;
-	        } else if (resultCheckType.length > 0 && !firstResult.item && firstElementWithoutItem === undefined) {
-	          firstElementWithoutItem = firstResult;
-	        }
-	        //Append to results
-	        result = result.concat(resultCheckType);
-	      }
-	      return result;
-	    }
-	    /**
-	     * Handle all Boolean variables, can be replaced with options.handleBoolean
-	     *
-	     * @param {Boolean} boolean
-	     * @returns {String} result
-	     */
-
-	  }, {
-	    key: '_handleBoolean',
-	    value: function _handleBoolean(boolean) {
-	      var result;
-	      //Check for booolean options
-	      if (boolean) {
-	        result = this._options.booleanTrueString || 'true';
-	      } else {
-	        result = this._options.booleanFalseString || 'false';
-	      }
-	      return result;
-	    }
-	    /**
-	     * Handle all String variables, can be replaced with options.handleString
-	     *
-	     * @param {String} string
-	     * @returns {String} string
-	     */
-
-	  }, {
-	    key: '_handleString',
-	    value: function _handleString(string) {
-	      return string;
-	    }
-	    /**
-	     * Handle all Number variables, can be replaced with options.handleNumber
-	     *
-	     * @param {Number} number
-	     * @returns {Number} number
-	     */
-
-	  }, {
-	    key: '_handleNumber',
-	    value: function _handleNumber(number) {
-	      return number;
-	    }
-	    /**
-	     * Handle all Date variables, can be replaced with options.handleDate
-	     *
-	     * @param {Date} number
-	     * @returns {string} result
-	     */
-
-	  }, {
-	    key: '_handleDate',
-	    value: function _handleDate(date) {
-	      return date.toLocaleDateString();
-	    }
-	  }]);
-
-	  return Handler;
-	}();
-
-	var handler = Handler;
-
-	function warnDepOp(optionName, backOut) {
-	  console.warn("[jsonexport]: option " + optionName + " has been deprecated. Use option.typeHandlers");
-	  return backOut;
-	}
-
-	var globalScope = typeof window === "undefined" ? commonjsGlobal : window;
-	function isInstanceOfTypeName(element, typeName) {
-	  if (element instanceof globalScope[typeName]) {
-	    return true; //Buffer and complex objects
-	  }
-
-	  //literals in javascript cannot be checked by instance of
-	  switch (typeof element === 'undefined' ? 'undefined' : _typeof$1(element)) {
-	    case 'string':
-	      return typeName === "String";
-	    case 'boolean':
-	      return typeName === "Boolean";
-	    case 'number':
-	      return typeName === "Number";
-	  }
-
-	  return false;
-	}
-
-	/* jshint node:true */
-
-	// Escape the textDelimiters contained in the field
-	/*(https://tools.ietf.org/html/rfc4180)
-	   7.  If double-quotes are used to enclose fields, then a double-quote
-	   appearing inside a field must be escaped by preceding it with
-	   another double quote.
-	   For example: "aaa","b""bb","ccc"
-	*/
-
-	var escapeDelimiters = function escapedDelimiters(textDelimiter, rowDelimiter, forceTextDelimiter) {
-	  var endOfLine = '\n';
-
-	  if (typeof textDelimiter !== 'string') {
-	    throw new TypeError('Invalid param "textDelimiter", must be a string.');
-	  }
-
-	  if (typeof rowDelimiter !== 'string') {
-	    throw new TypeError('Invalid param "rowDelimiter", must be a string.');
-	  }
-
-	  var textDelimiterRegex = new RegExp("\\" + textDelimiter, 'g');
-	  var escapedDelimiter = textDelimiter + textDelimiter;
-
-	  var enclosingCondition = textDelimiter === '"' ? function (value) {
-	    return value.indexOf(rowDelimiter) >= 0 || value.indexOf(endOfLine) >= 0 || value.indexOf('"') >= 0;
-	  } : function (value) {
-	    return value.indexOf(rowDelimiter) >= 0 || value.indexOf(endOfLine) >= 0;
-	  };
-
-	  return function (value) {
-	    if (forceTextDelimiter) value = "" + value;
-
-	    if (!value.replace) return value;
-	    // Escape the textDelimiters contained in the field
-	    value = value.replace(textDelimiterRegex, escapedDelimiter);
-
-	    // Escape the whole field if it contains a rowDelimiter or a linebreak or double quote
-	    if (forceTextDelimiter || enclosingCondition(value)) {
-	      value = textDelimiter + value + textDelimiter;
-	    }
-
-	    return value;
-	  };
-	};
-
-	/**
-	 * Module dependencies.
-	 */
-
-	var _createClass$1 = function () {
-	  function defineProperties(target, props) {
-	    for (var i = 0; i < props.length; i++) {
-	      var descriptor = props[i];descriptor.enumerable = descriptor.enumerable || false;descriptor.configurable = true;if ("value" in descriptor) descriptor.writable = true;Object.defineProperty(target, descriptor.key, descriptor);
-	    }
-	  }return function (Constructor, protoProps, staticProps) {
-	    if (protoProps) defineProperties(Constructor.prototype, protoProps);if (staticProps) defineProperties(Constructor, staticProps);return Constructor;
-	  };
-	}();
-
-	function _classCallCheck$1(instance, Constructor) {
-	  if (!(instance instanceof Constructor)) {
-	    throw new TypeError("Cannot call a class as a function");
-	  }
-	}
-
-	var Parser = function () {
-	  function Parser(options) {
-	    _classCallCheck$1(this, Parser);
-
-	    this._options = this._parseOptions(options) || {};
-	    this._handler = new handler(this._options);
-	    this._headers = this._options.headers || [];
-	    this._escape = escapeDelimiters(this._options.textDelimiter, this._options.rowDelimiter, this._options.forceTextDelimiter);
-	  }
-
-	  /**
-	   * Generates a CSV file with optional headers based on the passed JSON,
-	   * with can be an Object or Array.
-	   *
-	   * @param {Object|Array} json
-	   * @param {Function} done(err,csv) - Callback function
-	   *      if error, returning error in call back.
-	   *      if csv is created successfully, returning csv output to callback.
-	   */
-
-	  _createClass$1(Parser, [{
-	    key: 'parse',
-	    value: function parse(json, done, stream) {
-	      if (helper.isArray(json)) return done(null, this._parseArray(json, stream));else if (helper.isObject(json)) return done(null, this._parseObject(json));
-	      return done(new Error('Unable to parse the JSON object, its not an Array or Object.'));
-	    }
-	  }, {
-	    key: '_checkRows',
-	    value: function _checkRows(rows) {
-	      var lastRow = null;
-	      var finalRows = [];
-	      var fillGaps = function fillGaps(col, index) {
-	        return col === '' || col === undefined ? lastRow[index] : col;
-	      };
-	      var _iteratorNormalCompletion = true;
-	      var _didIteratorError = false;
-	      var _iteratorError = undefined;
-
-	      try {
-	        for (var _iterator = rows[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
-	          var row = _step.value;
-
-	          var missing = this._headers.length - row.length;
-	          if (missing > 0) row = row.concat(Array(missing).join(".").split("."));
-	          if (lastRow && this._options.fillGaps) row = row.map(fillGaps);
-	          finalRows.push(row.join(this._options.rowDelimiter));
-	          lastRow = row;
-	        }
-	      } catch (err) {
-	        _didIteratorError = true;
-	        _iteratorError = err;
-	      } finally {
-	        try {
-	          if (!_iteratorNormalCompletion && _iterator.return) {
-	            _iterator.return();
-	          }
-	        } finally {
-	          if (_didIteratorError) {
-	            throw _iteratorError;
-	          }
-	        }
-	      }
-
-	      return finalRows;
-	    }
-	  }, {
-	    key: '_parseArray',
-	    value: function _parseArray(json, stream) {
-	      var self = this;
-	      this._headers = this._headers || [];
-	      var fileRows = [];
-	      var fillRows = void 0;
-
-	      var getHeaderIndex = function getHeaderIndex(header) {
-	        var index = self._headers.indexOf(header);
-	        if (index === -1) {
-	          self._headers.push(header);
-	          index = self._headers.indexOf(header);
-	        }
-	        return index;
-	      };
-
-	      //Generate the csv output
-	      fillRows = function fillRows(result) {
-	        //Initialize the array with empty strings to handle 'unpopular' headers
-	        var resultRows = [Array(self._headers.length).join(".").split(".")];
-	        var _iteratorNormalCompletion2 = true;
-	        var _didIteratorError2 = false;
-	        var _iteratorError2 = undefined;
-
-	        try {
-	          for (var _iterator2 = result[Symbol.iterator](), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
-	            var element = _step2.value;
-
-	            var elementHeaderIndex = getHeaderIndex(element.item);
-	            var placed = false;
-	            var _iteratorNormalCompletion3 = true;
-	            var _didIteratorError3 = false;
-	            var _iteratorError3 = undefined;
-
-	            try {
-	              for (var _iterator3 = resultRows[Symbol.iterator](), _step3; !(_iteratorNormalCompletion3 = (_step3 = _iterator3.next()).done); _iteratorNormalCompletion3 = true) {
-	                var row = _step3.value;
-
-	                if (!placed && row[elementHeaderIndex] === '' || row[elementHeaderIndex] === undefined) {
-	                  row[elementHeaderIndex] = self._escape(element.value);
-	                  placed = true;
-	                  break;
-	                }
-	              }
-	            } catch (err) {
-	              _didIteratorError3 = true;
-	              _iteratorError3 = err;
-	            } finally {
-	              try {
-	                if (!_iteratorNormalCompletion3 && _iterator3.return) {
-	                  _iterator3.return();
-	                }
-	              } finally {
-	                if (_didIteratorError3) {
-	                  throw _iteratorError3;
-	                }
-	              }
-	            }
-
-	            if (!placed) {
-	              var newRow = Array(self._headers.length).join(".").split(".");
-	              newRow[elementHeaderIndex] = self._escape(element.value);
-	              resultRows.push(newRow);
-	            }
-	          }
-	        } catch (err) {
-	          _didIteratorError2 = true;
-	          _iteratorError2 = err;
-	        } finally {
-	          try {
-	            if (!_iteratorNormalCompletion2 && _iterator2.return) {
-	              _iterator2.return();
-	            }
-	          } finally {
-	            if (_didIteratorError2) {
-	              throw _iteratorError2;
-	            }
-	          }
-	        }
-
-	        fileRows = fileRows.concat(self._checkRows(resultRows));
-	      };
-	      var _iteratorNormalCompletion4 = true;
-	      var _didIteratorError4 = false;
-	      var _iteratorError4 = undefined;
-
-	      try {
-	        for (var _iterator4 = json[Symbol.iterator](), _step4; !(_iteratorNormalCompletion4 = (_step4 = _iterator4.next()).done); _iteratorNormalCompletion4 = true) {
-	          var item = _step4.value;
-
-	          //Call checkType to list all items inside this object
-	          //Items are returned as a object {item: 'Prop Value, Item Name', value: 'Prop Data Value'}
-	          var itemResult = self._handler.check(item, self._options.mainPathItem, item, json);
-	          fillRows(itemResult);
-	        }
-	      } catch (err) {
-	        _didIteratorError4 = true;
-	        _iteratorError4 = err;
-	      } finally {
-	        try {
-	          if (!_iteratorNormalCompletion4 && _iterator4.return) {
-	            _iterator4.return();
-	          }
-	        } finally {
-	          if (_didIteratorError4) {
-	            throw _iteratorError4;
-	          }
-	        }
-	      }
-
-	      if (!stream && self._options.includeHeaders) {
-	        //Add the headers to the first line
-	        fileRows.unshift(this.headers);
-	      }
-
-	      return joinRows(fileRows, self._options.endOfLine);
-	    }
-	  }, {
-	    key: '_parseObject',
-	    value: function _parseObject(json) {
-	      var self = this;
-	      var fileRows = [];
-	      var parseResult = [];
-	      var fillRows = void 0;
-	      var horizontalRows = [[], []];
-
-	      fillRows = function fillRows(result) {
-	        var value = result.value ? result.value.toString() : self._options.undefinedString;
-	        value = self._escape(value);
-
-	        //Type header;value
-	        if (self._options.verticalOutput) {
-	          var row = [result.item, value];
-	          fileRows.push(row.join(self._options.rowDelimiter));
-	        } else {
-	          horizontalRows[0].push(result.item);
-	          horizontalRows[1].push(value);
-	        }
-	      };
-	      for (var prop in json) {
-	        var prefix = "";
-	        if (this._options.mainPathItem) prefix = this._options.mainPathItem + this._options.headerPathString;
-	        parseResult = this._handler.check(json[prop], prefix + prop, prop, json);
-
-	        parseResult.forEach(fillRows);
-	      }
-	      if (!this._options.verticalOutput) {
-	        fileRows.push(horizontalRows[0].join(this._options.rowDelimiter));
-	        fileRows.push(horizontalRows[1].join(this._options.rowDelimiter));
-	      }
-	      return joinRows(fileRows, this._options.endOfLine);
-	    }
-
-	    /**
-	     * Replaces the default options with the custom user options
-	     *
-	     * @param {Options} userOptions
-	     */
-
-	  }, {
-	    key: '_parseOptions',
-	    value: function _parseOptions(userOptions) {
-	      var defaultOptions = {
-	        headers: [], //              Array
-	        rename: [], //               Array
-	        headerPathString: '.', //    String
-	        rowDelimiter: ',', //        String
-	        textDelimiter: '"', //       String
-	        arrayPathString: ';', //     String
-	        undefinedString: '', //      String
-	        endOfLine: eol || '\n', //   String
-	        mainPathItem: null, //       String
-	        booleanTrueString: null, //  String
-	        booleanFalseString: null, // String
-	        includeHeaders: true, //     Boolean
-	        fillGaps: false, //          Boolean
-	        verticalOutput: true, //     Boolean
-	        forceTextDelimiter: false, //Boolean
-	        //Handlers
-	        handleString: undefined, //  Function
-	        handleNumber: undefined, //  Function
-	        handleBoolean: undefined, // Function
-	        handleDate: undefined //    Function
-	      };
-	      return Object.assign({}, defaultOptions, userOptions);
-	    }
-	  }, {
-	    key: 'headers',
-	    get: function get() {
-	      var _this = this;
-
-	      var headers = this._headers;
-
-	      if (this._options.rename && this._options.rename.length > 0) headers = headers.map(function (header) {
-	        return _this._options.rename[_this._options.headers.indexOf(header)] || header;
-	      });
-
-	      if (this._options.forceTextDelimiter) {
-	        headers = headers.map(function (header) {
-	          return '' + _this._options.textDelimiter + header + _this._options.textDelimiter;
-	        });
-	      }
-
-	      return headers.join(this._options.rowDelimiter);
-	    }
-	  }]);
-
-	  return Parser;
-	}();
-
-	/* jshint node:true */
 
 	var TableExportZip = function () {
 		function TableExportZip(options) {
 			classCallCheck(this, TableExportZip);
 
 			this.options = Object.assign({}, TableExportZip.DEFAULTS, options);
-
-			this._init();
+			this.done = this.done.bind(this);
 		}
 
 		createClass(TableExportZip, [{
-			key: "_init",
-			value: function _init() {
-				console.log(this);
-			}
-		}, {
 			key: "download",
 			value: function download() {
-				console.log("download");
+				zip.files = {};
+				this.options.processCallback && this.options.processCallback();
+				this.options.addFiles(zip, this.done, {
+					CSVToJSON: CSVToJSON,
+					JSONtoCSV: JSONtoCSV
+				});
+			}
+		}, {
+			key: "done",
+			value: function done(result) {
+				var _this = this;
+
+				var filesLength = Object.keys(zip.files).length;
+				if (filesLength === 0 || filesLength !== result.length) return;
+				zip.generateAsync({ type: "blob" }).then(function (content) {
+					FileSaver(content, _this.options.zipFileName + ".zip");
+					_this.options.doneCallback && _this.options.doneCallback();
+				});
 			}
 		}], [{
 			key: "DEFAULTS",
@@ -3252,7 +2629,6 @@
 					zipFileName: "eportFile",
 					processCallback: null,
 					doneCallback: null,
-					failCallback: null,
 					addFiles: null
 				};
 			}
@@ -3265,4 +2641,3 @@
 	return TableExportZip;
 
 })));
-//# sourceMappingURL=tableExportZip.js.map

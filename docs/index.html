@@ -8,32 +8,59 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0,minimal-ui">
     <meta name="keywords" content="table-export-zip">
     <meta name="description" content="table-export-zip">
-    <link rel="stylesheet" href="./normalize.css">
+    <link rel="stylesheet" href="./css/normalize.css">
+    <link rel="stylesheet" href="./css/consola.css">
+    <link rel="stylesheet" href="./css/app.css">
 </head>
 
 <body>
-    <div class="test">
-        table-export-zip
+    <div class="app">
+        <a href="#" class="btn">Download Zip</a>
     </div>
+    <script src="./js/consola.js"></script>
+    <script>consola.creat();</script>
     <script src="../dist/tableExportZip.js"></script>
     <script>
-        let ins = new TableExportZip({
+        // 实例化
+        let app = new TableExportZip({
             zipFileName: 'fileName',
             processCallback: () => {
-                console.log('processing')
+                console.log('下载开始');
             },
             doneCallback: () => {
-                console.log('done')
+                console.log('下载结束');
             },
-            failCallback: (err) => {
-                console.log(err)
-            },
-            addFiles: (add, done) => {
+            addFiles: (zip, done, { CSVToJSON, JSONtoCSV }) => {
+                // 测试接口
+                let apiUrl = 'https://jsonplaceholder.typicode.com/posts?userId=';
 
+                // 待请求的Promise列表
+                let prArr = [];
+                for (let index = 0; index < 10; index++) {
+                    prArr.push(fetch(apiUrl + index));
+                }
+
+                // 开始请求
+                Promise.all(prArr).then(result => {
+                    result.forEach((item, index) => {
+                        item.json().then(content => {
+                            // json 转 csv
+                            const csvData = JSONtoCSV(content, ['userId', 'id', 'title', 'body']);
+                            // 添加 csv 文件
+                            zip.file(`fileName${index + 1}.csv`, csvData);
+                            // 触发结束回调
+                            done(result);
+                        })
+                    });
+                });
             }
         });
 
-        ins.download();
+        // 触发下载
+        document.querySelector('.btn').addEventListener('click', e => {
+            e.preventDefault();
+            app.download();
+        })
     </script>
 </body>
 

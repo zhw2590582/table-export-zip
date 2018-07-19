@@ -2,7 +2,7 @@
   "name": "table-export-zip",
   "version": "1.0.0",
   "description": "打包下载分割的表格",
-  "main": "index.js",
+  "main": "dist/tableExportZip.js",
   "scripts": {
     "dev": "rollup -c -m -w",
     "build": "rollup -c",
@@ -19,11 +19,6 @@
     "url": "https://github.com/zhw2590582/table-export-zip/issues"
   },
   "homepage": "https://github.com/zhw2590582/table-export-zip#readme",
-  "dependencies": {
-    "file-saver": "^1.3.8",
-    "jsonexport": "^2.2.1",
-    "jszip": "^3.1.5"
-  },
   "devDependencies": {
     "babel-plugin-external-helpers": "^6.22.0",
     "babel-preset-env": "^1.7.0",
