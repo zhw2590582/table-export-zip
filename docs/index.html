@@ -15,9 +15,20 @@
     <div class="test">
         table-export-zip
     </div>
-    <script src="../src/index.js"></script>
+    <script src="../dist/tableExportZip.js"></script>
     <script>
-        console.log('test')
+        let ins = new TableExportZip({
+            fileName: 'fileName',
+            processing: () => {
+                console.log('processing')
+            },
+            done: () => {
+                console.log('done')
+            },
+            addFile: (add, done) => {
+
+            }
+        });
     </script>
 </body>
 
