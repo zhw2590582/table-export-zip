@@ -1,6 +1,6 @@
 {
   "name": "table-export-zip",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "打包下载分割的表格",
   "main": "dist/tableExportZip.js",
   "scripts": {
@@ -19,6 +19,7 @@
   },
   "homepage": "https://github.com/zhw2590582/table-export-zip#readme",
   "devDependencies": {
+    "babel-core": "^6.26.3",
     "babel-plugin-external-helpers": "^6.22.0",
     "babel-preset-env": "^1.7.0",
     "rollup": "^0.63.2",

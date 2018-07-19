@@ -2572,68 +2572,69 @@
 	var zip = new jszip_min();
 
 	var CSVToJSON = function CSVToJSON(data) {
-		var delimiter = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : ",";
+	  var delimiter = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : ",";
 
-		var titles = data.slice(0, data.indexOf("\n")).split(delimiter);
-		return data.slice(data.indexOf("\n") + 1).split("\n").map(function (v) {
-			var values = v.split(delimiter);
-			return titles.reduce(function (obj, title, index) {
-				return obj[title] = values[index], obj;
-			}, {});
-		});
+	  var titles = data.slice(0, data.indexOf("\n")).split(delimiter);
+	  return data.slice(data.indexOf("\n") + 1).split("\n").map(function (v) {
+	    var values = v.split(delimiter);
+	    return titles.reduce(function (obj, title, index) {
+	      return obj[title] = values[index], obj;
+	    }, {});
+	  });
 	};
 
 	var JSONtoCSV = function JSONtoCSV(arr, columns) {
-		var delimiter = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : ",";
-		return [columns.join(delimiter)].concat(toConsumableArray(arr.map(function (obj) {
-			return columns.reduce(function (acc, key) {
-				return "" + acc + (!acc.length ? "" : delimiter) + "\"" + (!obj[key] ? "" : obj[key]) + "\"";
-			}, "");
-		}))).join("\n");
+	  var delimiter = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : ",";
+	  return [columns.join(delimiter)].concat(toConsumableArray(arr.map(function (obj) {
+	    return columns.reduce(function (acc, key) {
+	      return "" + acc + (!acc.length ? "" : delimiter) + "\"" + (!obj[key] ? "" : obj[key]) + "\"";
+	    }, "");
+	  }))).join("\n");
 	};
 
 	var TableExportZip = function () {
-		function TableExportZip(options) {
-			classCallCheck(this, TableExportZip);
+	  function TableExportZip(options) {
+	    classCallCheck(this, TableExportZip);
 
-			this.options = Object.assign({}, TableExportZip.DEFAULTS, options);
-			this.done = this.done.bind(this);
-		}
+	    this.options = Object.assign({}, TableExportZip.DEFAULTS, options);
+	    this.done = this.done.bind(this);
+	  }
 
-		createClass(TableExportZip, [{
-			key: "download",
-			value: function download() {
-				zip.files = {};
-				this.options.processCallback && this.options.processCallback();
-				this.options.addFiles(zip, this.done, {
-					CSVToJSON: CSVToJSON,
-					JSONtoCSV: JSONtoCSV
-				});
-			}
-		}, {
-			key: "done",
-			value: function done(result) {
-				var _this = this;
+	  createClass(TableExportZip, [{
+	    key: "download",
+	    value: function download() {
+	      zip.files = {};
+	      this.options.processCallback && this.options.processCallback();
+	      this.options.addFiles(zip, this.done, {
+	        CSVToJSON: CSVToJSON,
+	        JSONtoCSV: JSONtoCSV
+	      });
+	    }
+	  }, {
+	    key: "done",
+	    value: function done() {
+	      var _this = this;
 
-				var filesLength = Object.keys(zip.files).length;
-				if (filesLength === 0 || filesLength !== result.length) return;
-				zip.generateAsync({ type: "blob" }).then(function (content) {
-					FileSaver(content, _this.options.zipFileName + ".zip");
-					_this.options.doneCallback && _this.options.doneCallback();
-				});
-			}
-		}], [{
-			key: "DEFAULTS",
-			get: function get$$1() {
-				return {
-					zipFileName: "eportFile",
-					processCallback: null,
-					doneCallback: null,
-					addFiles: null
-				};
-			}
-		}]);
-		return TableExportZip;
+	      if (Object.keys(zip.files).length === 0) return;
+	      zip.generateAsync({
+	        type: "blob"
+	      }).then(function (content) {
+	        FileSaver(content, _this.options.zipFileName + ".zip");
+	        _this.options.doneCallback && _this.options.doneCallback();
+	      });
+	    }
+	  }], [{
+	    key: "DEFAULTS",
+	    get: function get$$1() {
+	      return {
+	        zipFileName: "eportFile",
+	        processCallback: null,
+	        doneCallback: null,
+	        addFiles: null
+	      };
+	    }
+	  }]);
+	  return TableExportZip;
 	}();
 
 	window.TableExportZip = TableExportZip;
@@ -2641,4 +2642,3 @@
 	return TableExportZip;
 
 })));
-//# sourceMappingURL=tableExportZip.js.map

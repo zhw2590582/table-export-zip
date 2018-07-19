@@ -11,46 +11,48 @@ $ npm i -S table-export-zip
 ## Usage
 
 ```js
-import TableExportZip from "table-export-zip";
+import TableExportZip from 'table-export-zip';
 
 // 实例化
 let app = new TableExportZip({
-	zipFileName: "fileName",
+	zipFileName: 'fileName',
 	processCallback: () => {
-		console.log("下载开始");
+		console.log('下载开始');
 	},
 	doneCallback: () => {
-		console.log("下载结束");
+		console.log('下载结束');
 	},
 	addFiles: (zip, done, { CSVToJSON, JSONtoCSV }) => {
-		// 测试接口
-		let apiUrl = "https://jsonplaceholder.typicode.com/posts?userId=";
+		// zip：jszip的实例
+		// done：结束的回调
+		// CSVToJSON：csv转json的工具
+		// JSONtoCSV：json转csv的工具
 
-		// 待请求的Promise列表
+		// 测试接口
+		let apiUrl = 'https://jsonplaceholder.typicode.com/posts?userId=';
+
+		// 准备待请求的Promise列表
 		let prArr = [];
 		for (let index = 0; index < 10; index++) {
-			prArr.push(fetch(apiUrl + index));
+			prArr.push(fetch(apiUrl + index).then(data => data.json()));
 		}
 
-		// 开始请求
+		// 开始并行请求
 		Promise.all(prArr).then(result => {
 			result.forEach((item, index) => {
-				item.json().then(content => {
-					// json 转 csv
-					const csvData = JSONtoCSV(content, ["userId", "id", "title", "body"]);
-					// 添加 csv 文件
-					zip.file(`fileName${index + 1}.csv`, csvData);
-					// 触发结束回调
-					done(result);
-				});
+				// json 转 csv，第一个参数为数据，第二参数为表头字段
+				const csvData = JSONtoCSV(result, ['userId', 'id', 'title', 'body']);
+				// 添加 csv 文件，可定义文件名
+				zip.file(`fileName${index + 1}.csv`, csvData);
 			});
+			// 触发结束回调
+			done();
 		});
 	}
 });
 
 // 触发下载
 app.download();
-
 ```
 
 ## Related
