@@ -1,35 +1,31 @@
-import JSZip from './jszip.min.js';
-import jsonexport from 'jsonexport/dist';
-
-console.log(JSZip, jsonexport)
+import JSZip from "./jszip.min.js";
+import saveAs from './FileSaver.js';
+import jsonexport from "jsonexport/dist";
 
 class TableExportZip {
 	constructor(options) {
-        this.options = Object.assign({}, TableExportZip.DEFAULTS, options);
+		this.options = Object.assign({}, TableExportZip.DEFAULTS, options);
 
 		this._init();
 	}
 
 	static get DEFAULTS() {
 		return {
-			fileName: 'eportFile',
-			processing: null,
-			done: null,
-			addFile: null,
+			zipFileName: "eportFile",
+			processCallback: null,
+			doneCallback: null,
+			failCallback: null,
+			addFiles: null
 		};
 	}
 
 	_init() {
 		console.log(this);
-    }
-    
-    start() {
-        //
-    }
+	}
 
-	destroy() {
-        //
-    }
+	download() {
+		console.log("download");
+	}
 }
 
 window.TableExportZip = TableExportZip;

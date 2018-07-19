@@ -18,17 +18,22 @@
     <script src="../dist/tableExportZip.js"></script>
     <script>
         let ins = new TableExportZip({
-            fileName: 'fileName',
-            processing: () => {
+            zipFileName: 'fileName',
+            processCallback: () => {
                 console.log('processing')
             },
-            done: () => {
+            doneCallback: () => {
                 console.log('done')
             },
-            addFile: (add, done) => {
+            failCallback: (err) => {
+                console.log(err)
+            },
+            addFiles: (add, done) => {
 
             }
         });
+
+        ins.download();
     </script>
 </body>
 
