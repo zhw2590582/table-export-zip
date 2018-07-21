@@ -45,9 +45,7 @@ let app = new TableExportZip({
 				// 添加 csv 文件，可定义文件名
 				zip.file(`fileName${index + 1}.csv`, csvData);
 			});
-			// 触发结束回调
-			done();
-		});
+		}).then(done);
 	}
 });
 
